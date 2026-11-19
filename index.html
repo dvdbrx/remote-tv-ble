@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Bluetooth Remote &amp; Wi-Fi Recovery — Remote TV Display</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='18' rx='3' fill='%230f172a' stroke='%2338bdf8' stroke-width='2.5'/%3E%3Cline x1='11' y1='27' x2='21' y2='27' stroke='%2338bdf8' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <script>try{if(localStorage.getItem("tvdisplay_theme")==="light")document.documentElement.setAttribute("data-theme","light");}catch(_){}</script>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --bg-card: #151f32;
+      --bg-elevated: #1e293b;
+      --bg-input: #0b1324;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --accent-ink: #082f49;
+      --green: #22c55e;
+      --green-btn-ink: #052e16;
+      --green-bg: rgba(34, 197, 94, 0.16);
+      --green-ink: #bbf7d0;
+      --amber: #f59e0b;
+      --amber-btn-ink: #451a03;
+      --amber-bg: rgba(245, 158, 11, 0.16);
+      --amber-ink: #fde68a;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.16);
+      --danger-ink: #fca5a5;
+      --info-bg: rgba(56, 189, 248, 0.14);
+      --info-ink: #bae6fd;
+      --radius: 12px;
+      color-scheme: dark;
+    }
+
+    html[data-theme="light"] {
+      --bg: #eef2f6;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --bg-input: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0369a1;
+      --accent-hover: #075985;
+      --accent-ink: #ffffff;
+      --green: #15803d;
+      --green-btn-ink: #ffffff;
+      --green-bg: #dcfce7;
+      --green-ink: #14532d;
+      --amber: #b45309;
+      --amber-btn-ink: #ffffff;
+      --amber-bg: #fef3c7;
+      --amber-ink: #78350f;
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --danger-ink: #991b1b;
+      --info-bg: #e0f2fe;
+      --info-ink: #075985;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .brand-dot.connected { background: var(--green); }
+
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    h2 {
+      margin: 0 0 0.45rem 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .wrap {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .muted { color: var(--muted); font-size: 0.84rem; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.22rem 0.58rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+    }
+    .badge-ok { background: var(--green-bg); color: var(--green-ink); border-color: var(--green); }
+    .badge-warn { background: var(--amber-bg); color: var(--amber-ink); border-color: var(--amber); }
+    .badge-info { background: var(--info-bg); color: var(--info-ink); border-color: var(--accent); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 46px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { filter: brightness(1.08); background: var(--bg-elevated); }
+
+    .btn-success { background: var(--green); color: var(--green-btn-ink); }
+    .btn-warn { background: var(--amber); color: var(--amber-btn-ink); }
+    .btn-danger { background: var(--danger-bg); color: var(--danger-ink); border-color: var(--danger); }
+    .btn-danger:hover:not(:disabled) { background: var(--danger); color: #ffffff; }
+
+    .btn-sm { min-height: 38px; padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+    .btn-full { width: 100%; }
+
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .btn-row > .btn { flex: 1 1 0; }
+
+    .remote-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .status-kv {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.7rem;
+      border-radius: 9px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .status-kv strong { display: block; font-size: 0.86rem; color: var(--text); word-break: break-word; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text);
+      font-size: 0.94rem;
+    }
+
+    html[data-theme="light"] input[type="text"],
+    html[data-theme="light"] input[type="password"],
+    html[data-theme="light"] select {
+      border-color: #94a3b8;
+    }
+
+    .field { margin-bottom: 0.65rem; }
+
+    .alert {
+      padding: 0.65rem 0.8rem;
+      border-radius: 9px;
+      font-size: 0.84rem;
+      border: 1px solid var(--border);
+      background: var(--info-bg);
+      color: var(--info-ink);
+    }
+    .alert-ok { background: var(--green-bg); color: var(--green-ink); border-color: var(--green); }
+    .alert-err { background: var(--danger-bg); color: var(--danger-ink); border-color: var(--danger); }
+    .alert-warn { background: var(--amber-bg); color: var(--amber-ink); border-color: var(--amber); }
+
+    .net-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin: 0.65rem 0;
+    }
+
+    .net-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      min-height: 44px;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .net-item:hover { border-color: var(--accent); }
+
+    .pin-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .pin-row input {
+      font-size: 1.2rem;
+      letter-spacing: 0.2em;
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 44px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .check-row input { width: 18px; height: 18px; margin: 0; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot" id="connDot" aria-hidden="true"></span>
+      <h1>TV Bluetooth Remote</h1>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" id="themeBtn" aria-pressed="false">Daylight</button>
+  </header>
+
+  <main class="wrap">
+    <div id="compatBanner" class="alert alert-warn" hidden>
+      <strong>Web Bluetooth is not available in this browser.</strong><br />
+      • <strong>Android:</strong> Open this page in <strong>Google Chrome</strong> (works offline after first load).<br />
+      • <strong>iPhone / iPad:</strong> Open this URL in the free <strong>Bluefy</strong> WebBLE browser app, or use <strong>nRF Connect</strong> to send plain-text commands (<code>AUTH 123456</code>, <code>TV_ON</code>, <code>VOL_UP</code>, <code>WIFI_RECONNECT</code>) to service <code>7e4d0001-3b8a-4e2c-9a10-5c6f8e9a0b01</code>.
+    </div>
+
+    <div id="feedbackBox" class="alert" role="status" aria-live="polite" hidden></div>
+
+    <!-- Connection & Live Status Card -->
+    <section class="card">
+      <div class="card-head">
+        <h2>1. Connect to TV via Bluetooth</h2>
+        <span class="badge" id="connBadge">Disconnected</span>
+      </div>
+      <p class="muted" style="margin: 0 0 0.75rem 0;">
+        Works even when your Pi Zero 2 W or Pi 400 has no Wi-Fi connection.
+      </p>
+      <div class="btn-row">
+        <button type="button" class="btn" id="connectBtn">Connect to TV</button>
+        <button type="button" class="btn btn-secondary" id="refreshBtn" hidden>Refresh</button>
+        <button type="button" class="btn btn-secondary" id="disconnectBtn" hidden>Disconnect</button>
+      </div>
+
+      <div id="statusGrid" class="status-kv" hidden>
+        <div><span class="muted">Screen</span><strong id="stName">—</strong></div>
+        <div><span class="muted">Wi-Fi Status</span><strong id="stWifi">—</strong></div>
+        <div><span class="muted">IP Address</span><strong id="stIp">—</strong></div>
+        <div><span class="muted">Now Playing</span><strong id="stPlaying">—</strong></div>
+      </div>
+    </section>
+
+    <!-- PIN Unlock Card -->
+    <section class="card" id="pinCard" hidden>
+      <div class="card-head">
+        <h2>2. Unlock Controls (TV Pairing PIN)</h2>
+        <span class="badge badge-warn" id="authBadge">Locked</span>
+      </div>
+      <p class="muted" style="margin: 0 0 0.65rem 0;">
+        Enter the 6-digit PIN shown on the TV screen to control power, volume, playback, and Wi-Fi.
+      </p>
+      <form id="pinForm" class="pin-row" style="margin-bottom: 0.55rem;">
+        <input type="text" id="pinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" aria-label="6-digit TV Pairing PIN" required />
+        <button type="submit" class="btn" id="unlockBtn">Unlock</button>
+      </form>
+      <button type="button" class="btn btn-secondary btn-sm btn-full" id="showPinBtn">Show Pairing PIN on TV (30s)</button>
+    </section>
+
+    <!-- TV & Slideshow Remote Card -->
+    <section class="card" id="remoteCard" hidden>
+      <div class="card-head">
+        <h2>TV &amp; Playback Remote</h2>
+        <span class="badge badge-info" id="cecBadge">HDMI-CEC</span>
+      </div>
+      <div class="remote-grid" style="margin-bottom: 0.55rem;">
+        <button type="button" class="btn btn-success" data-cmd="tv_on">TV On</button>
+        <button type="button" class="btn btn-danger" data-cmd="tv_off">TV Off</button>
+        <button type="button" class="btn btn-secondary" data-cmd="hdmi">HDMI</button>
+
+        <button type="button" class="btn btn-secondary" data-cmd="vol_down">Vol &minus;</button>
+        <button type="button" class="btn btn-secondary" data-cmd="mute">Mute</button>
+        <button type="button" class="btn btn-secondary" data-cmd="vol_up">Vol +</button>
+
+        <button type="button" class="btn btn-secondary" data-cmd="prev">Prev</button>
+        <button type="button" class="btn btn-warn" data-cmd="play_pause">Play / Pause</button>
+        <button type="button" class="btn btn-secondary" data-cmd="next">Next</button>
+      </div>
+    </section>
+
+    <!-- Wi-Fi Recovery Card -->
+    <section class="card" id="wifiCard" hidden>
+      <div class="card-head">
+        <h2>Wi-Fi Recovery &amp; Setup</h2>
+        <span class="badge" id="hwBandBadge">Wi-Fi</span>
+      </div>
+      <div class="btn-row" style="margin-bottom: 0.75rem;">
+        <button type="button" class="btn btn-secondary" id="wifiReconnectBtn">Reconnect Saved Wi-Fi</button>
+        <button type="button" class="btn btn-secondary" id="wifiScanBtn">Scan Wi-Fi</button>
+      </div>
+      <div id="wifiScanList" class="net-list" hidden></div>
+
+      <form id="wifiForm">
+        <div class="field">
+          <label for="wifiSsid">Wi-Fi Network Name (SSID)</label>
+          <input type="text" id="wifiSsid" required autocapitalize="none" spellcheck="false" placeholder="Tap scanned network or type hidden SSID" />
+        </div>
+        <div class="field">
+          <label for="wifiPwd">Wi-Fi Password</label>
+          <input type="password" id="wifiPwd" autocomplete="off" placeholder="Leave blank for open network" />
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="wifiHidden" />
+          <span>Hidden network (SSID not broadcast)</span>
+        </label>
+        <div class="field" style="margin-top: 0.35rem;">
+          <label for="wifiCountry">Wi-Fi Country / Region</label>
+          <select id="wifiCountry">
+            <option value="US">United States (US)</option>
+            <option value="CA">Canada (CA)</option>
+            <option value="GB">United Kingdom (GB)</option>
+            <option value="DE">Germany (DE)</option>
+            <option value="FR">France (FR)</option>
+            <option value="AU">Australia (AU)</option>
+            <option value="MX">Mexico (MX)</option>
+            <option value="JP">Japan (JP)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-full" id="wifiConnectBtn">Connect TV to Wi-Fi</button>
+      </form>
+
+      <div class="btn-row" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+        <button type="button" class="btn btn-secondary btn-sm" id="wifiHotspotBtn">Start Setup Hotspot</button>
+        <button type="button" class="btn btn-danger btn-sm" id="rebootBtn">Safe Reboot TV</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const SERVICE_UUID = "7e4d0001-3b8a-4e2c-9a10-5c6f8e9a0b01";
+      const CHAR_STATUS = "7e4d0002-3b8a-4e2c-9a10-5c6f8e9a0b01";
+      const CHAR_CMD = "7e4d0003-3b8a-4e2c-9a10-5c6f8e9a0b01";
+      const CHAR_RESP = "7e4d0004-3b8a-4e2c-9a10-5c6f8e9a0b01";
+      const CHAR_WIFI = "7e4d0005-3b8a-4e2c-9a10-5c6f8e9a0b01";
+
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      let device = null;
+      let statusChar = null;
+      let cmdChar = null;
+      let respChar = null;
+      let wifiChar = null;
+      let respBuf = "";
+      let wifiBuf = "";
+      let isAuthed = false;
+
+      const $ = (id) => document.getElementById(id);
+
+      // Register offline Service Worker (HTTPS / localhost)
+      if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      }
+
+      // Daylight / Dark Theme toggle
+      function syncTheme(theme) {
+        const isLight = theme === "light";
+        if (isLight) document.documentElement.setAttribute("data-theme", "light");
+        else document.documentElement.removeAttribute("data-theme");
+        const btn = $("themeBtn");
+        btn.textContent = isLight ? "Dark" : "Daylight";
+        btn.setAttribute("aria-pressed", String(isLight));
+      }
+      syncTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
+      $("themeBtn").addEventListener("click", () => {
+        const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+        try { localStorage.setItem("tvdisplay_theme", next); } catch (_) {}
+        syncTheme(next);
+      });
+
+      if (!navigator.bluetooth) {
+        $("compatBanner").hidden = false;
+        $("connectBtn").disabled = true;
+      }
+
+      function showFeedback(msg, kind = "info") {
+        const box = $("feedbackBox");
+        box.textContent = msg;
+        box.className = "alert" + (kind === "ok" ? " alert-ok" : kind === "err" ? " alert-err" : kind === "warn" ? " alert-warn" : "");
+        box.hidden = false;
+      }
+
+      async function writeChunked(characteristic, text) {
+        const bytes = encoder.encode(text.endsWith("\n") ? text : text + "\n");
+        const maxChunk = 180;
+        for (let i = 0; i < bytes.length; i += maxChunk) {
+          const slice = bytes.slice(i, i + maxChunk);
+          await characteristic.writeValue(slice);
+        }
+      }
+
+      function setConnectedUi(connected) {
+        $("connDot").classList.toggle("connected", connected);
+        $("connBadge").textContent = connected ? "Connected" : "Disconnected";
+        $("connBadge").className = "badge" + (connected ? " badge-ok" : "");
+        $("connectBtn").hidden = connected;
+        $("refreshBtn").hidden = !connected;
+        $("disconnectBtn").hidden = !connected;
+        $("statusGrid").hidden = !connected;
+        $("pinCard").hidden = !connected || isAuthed;
+        $("remoteCard").hidden = !connected || !isAuthed;
+        $("wifiCard").hidden = !connected || !isAuthed;
+      }
+
+      function applyStatusObject(st) {
+        if (!st || typeof st !== "object") return;
+        $("stName").textContent = st.name || device?.name || "TV";
+        const mode = st.wifi_mode || "unknown";
+        $("stWifi").textContent = st.ssid ? `${mode} (${st.ssid})` : mode;
+        if (st.ip && mode === "connected") {
+          const url = `http://${st.ip}:${st.port || 8080}`;
+          $("stIp").innerHTML = `<a href="${url}" target="_blank" rel="noopener" style="color: var(--accent);">${st.ip}</a>`;
+        } else {
+          $("stIp").textContent = st.ip || "Offline";
+        }
+        $("stPlaying").textContent = st.paused
+          ? `Paused${st.title ? ` — ${st.title}` : ""}`
+          : st.playing
+          ? st.title || "Playing"
+          : "Idle / QR Screen";
+        $("cecBadge").textContent = st.cec_ready ? "HDMI-CEC Ready" : "HDMI-CEC Standby";
+        $("hwBandBadge").textContent = st.supports_5ghz ? "2.4 & 5 GHz" : "2.4 GHz Only";
+        if (typeof st.authed === "boolean") {
+          isAuthed = st.authed;
+          setConnectedUi(Boolean(device && device.gatt && device.gatt.connected));
+        }
+      }
+
+      async function readStatus() {
+        if (!statusChar) return;
+        const dv = await statusChar.readValue();
+        const text = decoder.decode(dv.buffer).trim();
+        if (text.startsWith("{")) {
+          applyStatusObject(JSON.parse(text));
+        }
+      }
+
+      function handleResponseLine(line) {
+        if (!line.trim()) return;
+        try {
+          const data = JSON.parse(line);
+          if (data.cmd === "auth") {
+            isAuthed = Boolean(data.ok && data.authed);
+            if (isAuthed && device?.id) {
+              try { localStorage.setItem(`tvble_pin_${device.id}`, $("pinInput").value.trim()); } catch (_) {}
+            }
+            setConnectedUi(true);
+            showFeedback(data.msg || (isAuthed ? "Unlocked" : "Invalid PIN"), isAuthed ? "ok" : "err");
+            readStatus().catch(() => {});
+            return;
+          }
+          if (data.cmd === "auth_required") {
+            isAuthed = false;
+            setConnectedUi(true);
+            showFeedback(data.msg || "Pairing PIN required.", "warn");
+            return;
+          }
+          if (data.status) applyStatusObject(data.status);
+          if (data.msg) showFeedback(data.msg, data.ok ? "ok" : "err");
+          if (data.cmd === "wifi_reconnect" || data.cmd === "wifi_hotspot" || data.cmd === "play_pause" || data.cmd === "next" || data.cmd === "prev") {
+            setTimeout(() => readStatus().catch(() => {}), 450);
+          }
+        } catch (_) {}
+      }
+
+      function renderScannedNetworks(networks) {
+        const list = $("wifiScanList");
+        list.innerHTML = "";
+        if (!Array.isArray(networks) || networks.length === 0) {
+          list.innerHTML = `<div class="muted">No broadcast Wi-Fi networks found. Type a hidden SSID below.</div>`;
+          list.hidden = false;
+          return;
+        }
+        networks.forEach((n) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "net-item";
+          const bandNote = n.ok ? n.band : `${n.band} (unsupported)`;
+          btn.innerHTML = `<span><strong>${n.ssid.replace(/[<>&"]/g, "")}</strong><br><span class="muted">${n.sec || "Open"} • ${bandNote}</span></span><span class="badge ${n.ok ? "badge-info" : "badge-warn"}">${n.sig}%</span>`;
+          btn.addEventListener("click", () => {
+            $("wifiSsid").value = n.ssid;
+            $("wifiHidden").checked = false;
+            $("wifiPwd").focus();
+            showFeedback(`Selected "${n.ssid}". Enter password and tap Connect TV to Wi-Fi.`, "info");
+          });
+          list.appendChild(btn);
+        });
+        list.hidden = false;
+      }
+
+      function handleWifiLine(line) {
+        if (!line.trim()) return;
+        try {
+          const data = JSON.parse(line);
+          if (data.op === "auth_required") {
+            isAuthed = false;
+            setConnectedUi(true);
+            showFeedback(data.msg || "Pairing PIN required.", "warn");
+            return;
+          }
+          if (data.op === "scan") {
+            if (data.country) $("wifiCountry").value = data.country;
+            $("hwBandBadge").textContent = data.supports_5ghz ? "2.4 & 5 GHz" : "2.4 GHz Only";
+            renderScannedNetworks(data.networks || []);
+            showFeedback(`Found ${(data.networks || []).length} Wi-Fi network(s).`, "ok");
+            return;
+          }
+          if (data.op === "connecting") {
+            showFeedback(data.msg || "Connecting TV to Wi-Fi...", "info");
+            return;
+          }
+          if (data.msg) {
+            showFeedback(data.msg, data.ok ? "ok" : "err");
+          }
+          setTimeout(() => readStatus().catch(() => {}), 600);
+        } catch (_) {}
+      }
+
+      async function connectBle() {
+        try {
+          showFeedback("Scanning for nearby Remote TV Display appliances...", "info");
+          device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [SERVICE_UUID] }],
+          });
+          device.addEventListener("gattserverdisconnected", () => {
+            isAuthed = false;
+            setConnectedUi(false);
+            showFeedback("Bluetooth disconnected from TV.", "warn");
+          });
+
+          const server = await device.gatt.connect();
+          const service = await server.getPrimaryService(SERVICE_UUID);
+          statusChar = await service.getCharacteristic(CHAR_STATUS);
+          cmdChar = await service.getCharacteristic(CHAR_CMD);
+          respChar = await service.getCharacteristic(CHAR_RESP);
+          wifiChar = await service.getCharacteristic(CHAR_WIFI);
+
+          await respChar.startNotifications();
+          respChar.addEventListener("characteristicvaluechanged", (e) => {
+            respBuf += decoder.decode(e.target.value.buffer);
+            let idx;
+            while ((idx = respBuf.indexOf("\n")) !== -1) {
+              const line = respBuf.slice(0, idx);
+              respBuf = respBuf.slice(idx + 1);
+              handleResponseLine(line);
+            }
+          });
+
+          await wifiChar.startNotifications();
+          wifiChar.addEventListener("characteristicvaluechanged", (e) => {
+            wifiBuf += decoder.decode(e.target.value.buffer);
+            let idx;
+            while ((idx = wifiBuf.indexOf("\n")) !== -1) {
+              const line = wifiBuf.slice(0, idx);
+              wifiBuf = wifiBuf.slice(idx + 1);
+              handleWifiLine(line);
+            }
+          });
+
+          await readStatus();
+          setConnectedUi(true);
+          showFeedback(`Connected to ${device.name || "TV"} via Bluetooth.`, "ok");
+
+          // Auto-unlock with saved PIN for this TV if available
+          let savedPin = "";
+          try { savedPin = localStorage.getItem(`tvble_pin_${device.id}`) || ""; } catch (_) {}
+          if (savedPin && !isAuthed) {
+            $("pinInput").value = savedPin;
+            await writeChunked(cmdChar, JSON.stringify({ cmd: "auth", pin: savedPin }));
+          }
+        } catch (err) {
+          if (err && err.name === "NotFoundError") {
+            showFeedback("Bluetooth scan cancelled.", "info");
+          } else {
+            showFeedback(`Bluetooth connection failed: ${err.message || err}`, "err");
+          }
+        }
+      }
+
+      $("connectBtn").addEventListener("click", connectBle);
+      $("refreshBtn").addEventListener("click", () => {
+        readStatus().then(() => showFeedback("Status refreshed.", "ok")).catch((e) => showFeedback(e.message, "err"));
+      });
+      $("disconnectBtn").addEventListener("click", () => {
+        if (device && device.gatt && device.gatt.connected) device.gatt.disconnect();
+      });
+
+      $("pinForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!cmdChar) return;
+        const pin = $("pinInput").value.trim();
+        try {
+          await writeChunked(cmdChar, JSON.stringify({ cmd: "auth", pin }));
+        } catch (err) {
+          showFeedback(`Failed to send PIN: ${err.message}`, "err");
+        }
+      });
+
+      $("showPinBtn").addEventListener("click", async () => {
+        if (!cmdChar) return;
+        try {
+          await writeChunked(cmdChar, JSON.stringify({ cmd: "show_pin" }));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+
+      document.querySelectorAll("[data-cmd]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!cmdChar) return;
+          try {
+            await writeChunked(cmdChar, JSON.stringify({ cmd: btn.dataset.cmd }));
+          } catch (err) {
+            showFeedback(err.message, "err");
+          }
+        });
+      });
+
+      $("wifiReconnectBtn").addEventListener("click", async () => {
+        if (!wifiChar) return;
+        showFeedback("Reconnecting TV to saved Wi-Fi network...", "info");
+        try {
+          await writeChunked(wifiChar, JSON.stringify({ op: "reconnect" }));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+
+      $("wifiScanBtn").addEventListener("click", async () => {
+        if (!wifiChar) return;
+        showFeedback("Scanning Wi-Fi networks on TV...", "info");
+        try {
+          await writeChunked(wifiChar, JSON.stringify({ op: "scan" }));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+
+      $("wifiHotspotBtn").addEventListener("click", async () => {
+        if (!wifiChar) return;
+        if (!confirm("Switch this TV into Setup Hotspot mode? Slides are preserved.")) return;
+        try {
+          await writeChunked(wifiChar, JSON.stringify({ op: "hotspot" }));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+
+      $("wifiForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!wifiChar) return;
+        const ssid = $("wifiSsid").value.trim();
+        if (!ssid) return;
+        const payload = {
+          op: "connect",
+          ssid,
+          password: $("wifiPwd").value,
+          hidden: $("wifiHidden").checked,
+          country: $("wifiCountry").value,
+        };
+        showFeedback(`Sending Wi-Fi credentials for "${ssid}" over Bluetooth...`, "info");
+        try {
+          await writeChunked(wifiChar, JSON.stringify(payload));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+
+      $("rebootBtn").addEventListener("click", async () => {
+        if (!cmdChar) return;
+        if (!confirm("Safely reboot this TV display now?")) return;
+        try {
+          await writeChunked(cmdChar, JSON.stringify({ cmd: "reboot" }));
+        } catch (err) {
+          showFeedback(err.message, "err");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

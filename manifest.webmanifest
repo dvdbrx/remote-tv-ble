@@ -1,0 +1,18 @@
+{
+  "name": "Remote TV Display — Bluetooth Remote",
+  "short_name": "TV BLE Remote",
+  "description": "Offline Bluetooth Low Energy TV remote and Wi-Fi recovery controller for Remote TV Display appliances.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='%230f172a'/%3E%3Crect x='24' y='38' width='144' height='98' rx='14' fill='%23151f32' stroke='%2338bdf8' stroke-width='10'/%3E%3Cline x1='66' y1='156' x2='126' y2='156' stroke='%2338bdf8' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M96 58v58l22-18-36-26 36-14-22 14' fill='none' stroke='%2338bdf8' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
